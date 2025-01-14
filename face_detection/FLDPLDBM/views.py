@@ -42,8 +42,6 @@ NEO4J_URI = 'neo4j+s://abf9edae.databases.neo4j.io'
 NEO4J_USER = 'neo4j'
 NEO4J_PASSWORD = '7LbESA2foTba6tOIh5I4V2R9l_65t2PeI1IG1Vq2-8I'
 
-embedder = FaceNet()
-
 
 # Singleton for Model Management
 class ModelSingleton:
@@ -219,10 +217,6 @@ class Neo4jHandler:
             # Flatten the embedding and convert to a list
             flat_embedding = embedding.flatten().tolist()  # Ensure it's a flat list
 
-            # Optionally convert to JSON string for storage
-            embedding_json = json.dumps(
-                flat_embedding)  # Convert to JSON string
-
             session.run(
                 """
                 MATCH (p:Person {id: $username})
@@ -230,7 +224,7 @@ class Neo4jHandler:
                 CREATE (p)-[:HAS_IMAGE]->(img)
                 """,
                 username=username,
-                embedding=embedding_json,  # Use JSON string representation
+                embedding=flat_embedding,  # Store as list directly
                 created_at=creating_at
             )
 
@@ -246,25 +240,11 @@ class Neo4jHandler:
             return [
                 {
                     # Decode JSON string back to list
-                    "embedding": json.loads(record["embedding"]),
+                    "embedding": np.array(record["embedding"]),
                     "created_at": record["created_at"]
                 }
                 for record in result
             ]
-
-    ################### Added by Samuel##################
-    # def find_similar_person(self, new_embedding):
-    #     def normalize(embedding):
-    #         return embedding / np.linalg.norm(embedding)
-
-    #     new_embedding = normalize(new_embedding)
-    #     with self.driver.session() as session:
-    #         result = session.run("MATCH (p:Person)-[:HAS_IMAGE]->(img:Image) RETURN p.id AS person_id, img.embedding AS embedding")
-    #         embeddings = [(record["person_id"], normalize(np.array(record["embedding"]))) for record in result]
-
-    #     similarities = [(person_id, cosine_similarity([new_embedding], [embedding])[0][0]) for person_id, embedding in embeddings]
-    #     similar_persons = sorted(similarities, key=lambda x: x[1], reverse=True)[:10]
-    #     return similar_persons
 
     def find_similar_person(self, new_embedding):
         with self.driver.session() as session:
@@ -477,6 +457,8 @@ class FaceRecognitionAPI(View):
         face_cascade = cv2.CascadeClassifier(
             cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
         neo4j_handler = Neo4jHandler(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
+        # Load the feature extraction model
+        feature_extraction_model = get_model(mode="feature_extraction")
 
         while not cls.stop_event.is_set():
             ret, frame = cap.read()
@@ -487,8 +469,6 @@ class FaceRecognitionAPI(View):
             faces = face_cascade.detectMultiScale(
                 frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
 
-# faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-
             if len(faces) == 0:
                 continue
 
@@ -496,10 +476,10 @@ class FaceRecognitionAPI(View):
 
             for (x, y, w, h) in faces:
                 face = frame[y:y+h, x:x+w]
-                face = cv2.resize(face, (160, 160))
+                face = cv2.resize(face, (224, 224))
                 face = np.expand_dims(face, axis=0)
 
-                new_embedding = embedder.embeddings(face)[0]
+                new_embedding = feature_extraction_model.predict(face)[0]
 
                 similar_persons = neo4j_handler.find_similar_person(
                     new_embedding)
@@ -508,25 +488,25 @@ class FaceRecognitionAPI(View):
 
                 # Take the first recognized person (highest similarity)
                 if cls.recognized_persons:
-                    top_match = cls.recognized_persons[0]
-                    person_id = top_match['id']
-                    similarity = top_match['similarity']
-                    display_text = f"ID: {
-                        person_id}, Similarity: {similarity:.2f}"
+                    # Get the top 3 recognized persons
+                    # Get top 3 matches
+                    top_matches = cls.recognized_persons[:3]
+                    display_text = "\n".join([f"ID: {match['id']}, Similarity: {
+                                             match['similarity']:.2f}" for match in top_matches])
                 else:
                     display_text = "Unknown person"
 
-                break  # Process one face at a time
+                # Overlay text on the OpenCV frame
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                font_scale = 0.5
+                font_color = (0, 0, 255)  # Red color in BGR format
+                thickness = 1
+                position = (10, 30)  # Top-left corner
 
-            # Overlay text on the OpenCV frame
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            font_scale = 0.5
-            font_color = (0, 255, 0)  # Green
-            thickness = 1
-            position = (10, 30)  # Top-left corner
-
-            cv2.putText(frame, display_text, position, font,
-                        font_scale, font_color, thickness, cv2.LINE_AA)
+                # Split display_text into lines for better positioning
+                for i, line in enumerate(display_text.split('\n')):
+                    cv2.putText(frame, line, (position[0], position[1] + i * 20), font,
+                                font_scale, font_color, thickness, cv2.LINE_AA)
 
             # Display the OpenCV frame
             cv2.imshow("Recognition", frame)
@@ -536,43 +516,6 @@ class FaceRecognitionAPI(View):
         cap.release()
         cv2.destroyAllWindows()
         neo4j_handler.close()
-
-    # def start_camera(cls):
-    #     cls.stop_event.clear()
-    #     cap = cv2.VideoCapture(0)  # Start camera
-    #     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    #     neo4j_handler = Neo4jHandler(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
-
-    #     while not cls.stop_event.is_set():
-    #         ret, frame = cap.read()
-    #         if not ret:
-    #             continue
-
-    #         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    #         faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-
-    #         if len(faces) == 0:
-    #             continue
-
-    #         for (x, y, w, h) in faces:
-    #             face = frame[y:y+h, x:x+w]
-    #             face = cv2.resize(face, (160, 160))
-    #             face = np.expand_dims(face, axis=0)
-    #             new_embedding = embedder.embeddings(face)[0]
-
-    #             similar_persons = neo4j_handler.find_similar_person(new_embedding)
-    #             cls.recognized_persons = [{"id": person_id, "similarity": similarity}
-    #                                       for person_id, similarity in similar_persons]
-    #             break  # Process one face at a time
-
-    #         # Display OpenCV frame
-    #         cv2.imshow("Recognition", frame)
-    #         if cv2.waitKey(1) & 0xFF == ord('q'):
-    #             break
-
-    #     cap.release()
-    #     cv2.destroyAllWindows()
-    #     neo4j_handler.close()
 
     @classmethod
     def stop_camera(cls):
