@@ -10,7 +10,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("", home_page, name="home_page"),
-    path('signup/', signup_view, name='signup'),  # Signup page as root path
+    path('signup/', signup_view, name='signup'),
     path('login/', loginPage, name='login'),
     path('logout/', logoutPage, name='logout'),
     path('landing/', landingPage, name='landing'),

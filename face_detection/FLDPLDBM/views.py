@@ -46,9 +46,9 @@ from keras_facenet import FaceNet
 # Define URL patterns for the application
 from django.urls import path
 
-NEO4J_URI = 'neo4j+s://abf9edae.databases.neo4j.io'
-NEO4J_USER = 'neo4j'
-NEO4J_PASSWORD = '7LbESA2foTba6tOIh5I4V2R9l_65t2PeI1IG1Vq2-8I'
+NEO4J_URI = 'qwertyuiop'
+NEO4J_USER = 'asdfghjkl'
+NEO4J_PASSWORD = 'zxcvbnm'
 
 
 def home_page(request):
