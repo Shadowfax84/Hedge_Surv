@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrivifyAI - Differential Privacy</title>
+    <style>
+        /* General Styles */
+        html{
+            scroll-behavior: smooth;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        /* Navbar */
+        .navbar {
+            background-color: #333;
+            overflow: hidden;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar .logo {
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+        }
+
+        .navbar a:hover {
+            background-color: #575757;
+            border-radius: 5px;
+        }
+
+        /* Hero Section */
+    .hero {
+        position: relative;
+        text-align: center;
+        padding-top: 40px ;
+        padding-bottom: 40px;
+        color: rgb(65, 64, 64);
+        height: 460px;
+        background: url('/static/test.jpg') no-repeat center center/cover ;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background-color: #090a15;
+    }
+    .content{
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        margin-left: 500px;
+        text-align: left;
+    }
+    .hero p{
+        width: 600px;
+    }
+
+    .hero .button-box{
+        display: flex;
+        width: 250px;
+        justify-content: space-between;
+    }
+    .button-box button{
+        border-radius: 200px;
+        cursor: pointer;
+        border: none;
+        color: white;
+        font-weight: bold;
+        background-color: rgb(96, 174, 238);
+        width: 100px;
+        height: 40px;
+    }
+    .button-box button:hover{
+        background-color: rgb(122, 188, 241);
+    }
+
+    .hero h1 {
+        font-size: 40px;
+        margin-bottom: 10px;
+        z-index: 2;
+        position: relative;
+    }
+
+    .hero p {
+        font-size: 16px;
+        margin-bottom: 20px;
+        z-index: 2;
+        position: relative;
+    }
+
+    /* Overlay to improve text visibility */
+    .hero-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5); /* Black overlay with 50% opacity */
+        z-index: 1;
+    }
+
+        /* About Section */
+        #About {
+            padding: 50px 20px;
+            background: #fff;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+        }
+
+        .about-card {
+            background: #f8f8f8;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: left;
+        }
+
+        .about-card h1 {
+            font-size: 32px;
+            color: #333;
+            text-align: center;
+        }
+
+        .about-card h3 {
+            font-size: 22px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .about-card p {
+            font-size: 16px;
+            color: #555;
+        }
+
+        /* Technologies Section */
+        #technologies {
+            text-align: center;
+            padding: 50px 20px;
+        }
+
+        #technologies h1 {
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+
+        .technology-collection {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .technology-card {
+            background: white;
+            padding: 20px;
+            margin: 15px;
+            width: 300px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .technology-card h2 {
+            font-size: 22px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .technology-card p {
+            font-size: 16px;
+            color: #555;
+        }
+
+        /* Footer */
+        .footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 15px 0;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <div class="navbar">
+        <a href="#" class="logo">PrivifyAI : Intelligent and Secure Face Recognition System</a>
+        <div>
+            <a href="#About">About</a>
+            <a href="#technologies">Technologies</a>
+            <a href="#contact">Contact</a>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="content">
+            <h1>Welcome to PrivifyAI</h1>
+            <p>Welcome to Privify AI, your trusted platform for intelligent and secure face recognition. We enhance identity verification with advanced AI, ensuring accuracy and privacy. Privify AI is designed to prevent unauthorized access and safeguard your data with cutting-edge security measures.</p>
+            <div class="button-box">
+                <a href="{% url 'login' %}">
+                    <button>Login</button>
+                </a>
+                <a href="{% url 'signup' %}">
+                    <button>Register</button>
+                </a>
+            </div>            
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="About">
+        <div class="container">
+            <div class="about-card">
+                <h1>About Privify AI</h1>
+            </div>
+            <div class="about-card">
+                <h3><li>Privacy-Preserving AI</li></h3>
+                <p>We integrate cutting-edge technologies like Federated Learning and Differential Privacy to ensure data security while maintaining high model performance.</p>
+            </div>
+            <div class="about-card">
+                <h3><li>Secure & Encrypted Processing</li></h3>
+                <p>Our system employs Fully Homomorphic Encryption, allowing computations on encrypted data without decryption, ensuring end-to-end security.</p>
+            </div>
+            <div class="about-card">
+                <h3><li>Advanced Liveness Detection</li></h3>
+                <p>We implement real-time liveness detection to differentiate between real users and spoofing attempts, enhancing authentication reliability.</p>
+            </div>
+            <div class="about-card">
+                <h3><li>Innovation in Face Recognition</li></h3>
+                <p>Privify AI continuously evolves by integrating the latest advancements in AI and cryptographic security to provide a robust and secure face recognition system.<br> 
+                Join us in redefining privacy and security in face recognition technology with our intelligent and privacy-focused solutions.</p>
+            </div>
+        </div>    
+    </section>
+
+    <!-- Technologies Section -->
+    <section id="technologies">
+        <h1>Advanced Technologies Integrated</h1>
+        <div class="technology-collection">
+            <div class="technology-card">
+                <h2>Federated Learning</h2>
+                <p>Ensuring data privacy by enabling decentralized model training across multiple devices without sharing sensitive user data.</p>
+            </div>
+            <div class="technology-card">
+                <h2>Differential Privacy</h2>
+                <p>Protecting user identity by injecting controlled noise into data, ensuring that individual records remain untraceable while maintaining data utility.</p>
+            </div>
+            <div class="technology-card">
+                <h2>Fully Homomorphic Encryption</h2>
+                <p>Allowing computations on encrypted data without decryption, ensuring end-to-end security in facial recognition processes.</p>
+            </div>
+            <div class="technology-card">
+                <h2>Liveness Detection</h2>
+                <p>Preventing spoof attacks by distinguishing between real users and fake representations, such as photos, videos, or 3D masks.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <div class="footer" id="contact">
+        <p>Copyright &copy; Privify AI || All rights reserved</p>
+        <p>Have any queries?</p>
+        <p>Contact us: +91 7899447395</p>
+        <p>Email: syedabdulzpqmrta@gmail.com</p>
+
+    </div>
+
+</body>
+</html>

@@ -1,4 +1,9 @@
 # Import necessary Django modules
+from django.contrib.auth import authenticate, login
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import GlobalAveragePooling2D, Dense
+from tensorflow.keras.applications import MobileNetV2
+from django.shortcuts import render
 from django.contrib.auth.models import User
 from threading import Thread
 from urllib import request
@@ -23,6 +28,9 @@ from django.http import JsonResponse, HttpResponse
 from datetime import datetime, timezone
 import threading
 import os
+from dp import train_with_dp
+from fhe import encrypt_embedding_for_neo4j
+from my_flower_client import FlowerClient
 import shutil
 
 
@@ -43,7 +51,12 @@ NEO4J_USER = 'neo4j'
 NEO4J_PASSWORD = '7LbESA2foTba6tOIh5I4V2R9l_65t2PeI1IG1Vq2-8I'
 
 
+def home_page(request):
+    return render(request, 'test1.html')
+
 # Singleton for Model Management
+
+
 class ModelSingleton:
     _instance = None
     _lock = threading.Lock()
@@ -97,17 +110,44 @@ def get_cached_model():
     return None
 
 
+def load_model():
+    """Load MobileNetV2 model with a bottleneck layer for feature extraction."""
+    base_model = MobileNetV2(
+        weights='imagenet', include_top=False, input_shape=(224, 224, 3))
+
+    # Add Global Average Pooling layer followed by dense layers
+    x = GlobalAveragePooling2D()(base_model.output)
+    x = Dense(640, activation='relu')(x)  # First reduction step
+    x = Dense(480, activation='relu')(x)  # Second reduction step
+
+    # Final bottleneck layer to reduce to 384 dimensions
+    bottleneck_layer = Dense(384, activation='relu')(x)
+
+    model = Model(inputs=base_model.input,
+                  outputs=bottleneck_layer)  # Create final model
+    return model
+
+
+def get_cached_model():
+    """Placeholder function for loading a cached model."""
+    # Implement your caching logic here. For now, we will just call load_model.
+    return load_model()
+
+
 def get_model(mode="feature_extraction"):
     """Load the model for feature extraction or training."""
     model = get_cached_model()
     print("Cached model loaded")
+
     if not model:
         return None
 
     if mode == "feature_extraction":
+        # Create a new model that outputs the bottleneck layer for feature extraction
         feature_extraction_model = tf.keras.Model(
             inputs=model.input,
-            outputs=model.get_layer("global_average_pooling2d").output
+            # Output from the last dense layer (bottleneck)
+            outputs=model.layers[-1].output
         )
         # Get the output shape of the feature vector
         output_shape = feature_extraction_model.output_shape
@@ -118,7 +158,8 @@ def get_model(mode="feature_extraction"):
         return model
     else:
         raise ValueError(
-            "Invalid mode. Choose 'feature_extraction' or 'training'.")
+            "Invalid mode. Choose 'feature_extraction' or 'training'."
+        )
 
 
 def process_image(image_data):
@@ -128,31 +169,6 @@ def process_image(image_data):
     img_resized = cv2.resize(img, (224, 224))
     img_preprocessed = preprocess_input(img_resized.astype('float32'))
     return np.expand_dims(img_preprocessed, axis=0)
-
-
-class FlowerClient(fl.client.NumPyClient):
-    def __init__(self, model, train_data, train_labels):
-        self.model = model
-        self.train_data = train_data
-        self.train_labels = train_labels
-
-    def get_parameters(self):
-        return self.model.get_weights()
-
-    def set_parameters(self, parameters):
-        self.model.set_weights(parameters)
-
-    def fit(self, parameters, config):
-        self.set_parameters(parameters)
-        self.model.fit(self.train_data, self.train_labels,
-                       epochs=1, batch_size=32)
-        return self.get_parameters(), len(self.train_data), {}
-
-    def evaluate(self, parameters, config):
-        self.set_parameters(parameters)
-        loss, accuracy = self.model.evaluate(
-            self.train_data, self.train_labels)
-        return loss, len(self.train_data), {"accuracy": accuracy}
 
 
 def extract_features(model, image_data):
@@ -175,26 +191,26 @@ def extract_features(model, image_data):
 
 
 def start_flower_client(image_data, username):
-    # Get the model for training
-    model = get_model(mode="training")
-    img_array = process_image(image_data)
+    """Start a Flower client for federated learning."""
 
-    # Print the shape of the processed image
-    # Should be (1, 224, 224, 3)
-    print("Processed image shape:", img_array.shape)
+    # Convert image_data to numpy array if necessary (assuming it's already in the correct format)
+    img_array = np.array(image_data)  # Ensure it's a NumPy array
+    print(f"The shape is {img_array.shape}")  # Check shape
+    print(f"The data is {img_array}")  # Check contents
+    print(f"The datatype is {img_array.dtype}")  # Check contents
 
-    # Create a dummy label (not used for classification)
-    s = model.output.shape
-    dummy_labels = np.ones((img_array.shape[0], s[1]))
-    print("Dummy labels shape:", dummy_labels.shape)
+    # Train with differential privacy using dp.py
+    print("Starting differential privacy training...")
 
-    # Create a Flower client with the model and data
-    client = FlowerClient(model, img_array, dummy_labels)
+    updated_model_params = train_with_dp(
+        img_array)  # Call the DP training function
 
-    # Push the updated model to the federated server
-    client.fit(client.get_parameters(), config={})
+    # Create a Flower client with the trained model parameters
+    # Pass only the model parameters
+    client = FlowerClient(model_params=updated_model_params)
 
     print("Federated learning update sent to server.")
+
     return client
 
 
@@ -215,8 +231,7 @@ class Neo4jHandler:
 
         with self.driver.session() as session:
             # Flatten the embedding and convert to a list
-            flat_embedding = embedding.flatten().tolist()  # Ensure it's a flat list
-
+            flat_embedding = embedding
             session.run(
                 """
                 MATCH (p:Person {id: $username})
@@ -265,24 +280,48 @@ class Neo4jHandler:
 
 def signup_view(request):
     if request.method == 'POST':
-        form = SignupForm(request.POST)
-        if form.is_valid():
-            user = form.save(commit=False)
-            # Hash the password
-            user.set_password(form.cleaned_data['password'])
-            user.save()
-            # Create a Neo4j node for the new user
-            neo4j_handler = Neo4jHandler(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
-            try:
-                neo4j_handler.create_user_node(user.username)
-            finally:
-                neo4j_handler.close()
-            # Redirect to a success page or login page
-            return HttpResponse("Successfully Signed Up!") and redirect('login')
-    else:
-        form = SignupForm()
+        username = request.POST.get('username')
+        first_name = request.POST.get('first_name')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
 
-    return render(request, 'signup.html', {'form': form})
+        # Validation check
+        if User.objects.filter(username=username, first_name=first_name).exists():
+            return HttpResponse('The combination of username and first name must be unique.')
+
+        # Create user
+        user = User(username=username, first_name=first_name, email=email)
+        user.set_password(password)
+        user.save()
+
+        # Neo4j integration
+        neo4j_handler = Neo4jHandler(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
+        try:
+            neo4j_handler.create_user_node(user.username)
+        finally:
+            neo4j_handler.close()
+
+        return redirect('login')
+
+    return render(request, 'signup.html')
+
+
+def loginPage(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        user = authenticate(request, username=username, password=password)
+
+        if user is not None:
+            login(request, user)
+            return redirect('landing')
+        else:
+            return render(request, 'login.html', {
+                'error_message': 'Invalid username or password'
+            })
+
+    return render(request, 'login.html')
 
 
 def background_model_download():
@@ -297,28 +336,6 @@ def background_model_download():
             print("Failed to load the model in the background.")
     except Exception as e:
         print(f"Error during background model download: {e}")
-
-
-def loginPage(request):
-    if request.method == 'POST':
-        form = AuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            username = form.cleaned_data['username']
-            password = form.cleaned_data['password']
-            user = authenticate(request, username=username, password=password)
-            if user is not None:
-                login(request, user)
-
-                # Start the background thread for model caching
-                Thread(target=background_model_download).start()
-
-                return redirect('landing')  # Redirect to your landing page
-            else:
-                return HttpResponse("Username or Password is incorrect!")
-    else:
-        form = AuthenticationForm()
-
-    return render(request, 'login.html', {'form': form})
 
 
 def logoutPage(request):
@@ -366,11 +383,15 @@ def landingPage(request):
             if embedding is None:
                 return JsonResponse({"error": "Failed to generate embedding."}, status=500)
 
+            encrypted_embedding = encrypt_embedding_for_neo4j(embedding)
+            if encrypted_embedding is None:
+                return JsonResponse({"error": "Failed to encrypt embedding."}, status=500)
+
             # Save embedding to Neo4j
             neo4j_handler = Neo4jHandler(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
             try:
                 neo4j_handler.create_image_node(
-                    request.user.username, embedding)
+                    request.user.username, encrypted_embedding)
             finally:
                 neo4j_handler.close()
             print("saved successfully!")

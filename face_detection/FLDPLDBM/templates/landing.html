@@ -3,9 +3,9 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Upload or Capture Image</title>
+        <title>PrivifyAI Dashboard</title>
         {% load static %}
-        <link rel="stylesheet" type="text/css" href="{% static 'landing.css' %}">
+        <link rel="stylesheet" type="text/css" href="{% static 'images/landing.css' %}">
         <script>
             let videoStream;
             function requestConsent() {
@@ -113,6 +113,7 @@
     <body>
         {% csrf_token %}
         <h1>Welcome, {{ username }}!</h1>
+        
         <h2>Embeddings Information</h2>
         <p>You have stored {{ num_embeddings }} out of {{ max_embeddings }} allowed embeddings.</p>
         <table>
@@ -136,14 +137,18 @@
             </tbody>
         </table>
         {% if num_embeddings < max_embeddings %}
+    <div class="camera-controls">
         <button id="camera-access-button" onclick="requestConsent()">Add New Embedding</button>
         <div id="camera-section" style="display: none;">
             <video id="video" width="320" height="240" autoplay></video>
             <canvas id="canvas" width="320" height="240" style="display: none;"></canvas>
-            <br />
             <button onclick="captureImage()">Capture</button>
         </div>
+    </div>
     {% endif %}
-        <a href="{% url 'logout' %}">Log Out</a>
-    </body>
+
+    {% comment %} <a href="{% url 'logout' %}">Log Out</a> {% endcomment %}
+    <a href="{% url 'logout' %}">
+        <button>LogOut</button>
+</body>
 </html>

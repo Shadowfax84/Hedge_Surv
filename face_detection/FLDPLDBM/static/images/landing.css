@@ -1,19 +1,19 @@
 /* General Styles */
 body {
     font-family: Arial, sans-serif;
-    background-color: #f9f9f9;
-    color: #333;
+    background-color: rgb(2, 2, 24);
+    color: white;
     margin: 0;
     padding: 0;
 }
 h1, h2 {
-    color: #6d6d6d;
+    color: white;
 }
 /* Header */
 h1 {
     text-align: center;
     padding: 20px;
-    background-color: #f1e0a6;
+    background-color: rgb(119, 204, 232);
     margin: 0;
 }
 /* Table Styling */
@@ -21,7 +21,7 @@ table {
     width: 80%;
     margin: 20px auto;
     border-collapse: collapse;
-    background-color: #fff9e5;
+    background-color: rgb(119, 204, 232);
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 th, td {
@@ -30,19 +30,19 @@ th, td {
     border-bottom: 1px solid #ddd;
 }
 th {
-    background-color: #f1e0a6;
-    color: #4a4a4a;
+    background-color: rgb(119, 204, 232);
+    color: white;
 }
 tr:nth-child(even) {
-    background-color: #fdf7db;
+    background-color: rgb(119, 204, 232);
 }
 tr:hover {
-    background-color: #fcf0a4;
+    background-color: rgb(119, 204, 232);
 }
 /* Buttons */
 button {
-    background-color: #ffda80;
-    border: 1px solid #f1c26e;
+    background-color: rgb(119, 204, 232);
+    border: 1px solid rgb(119, 204, 232);
     padding: 10px 20px;
     font-size: 16px;
     color: #6b4f3b;
@@ -51,11 +51,11 @@ button {
     transition: all 0.3s ease;
 }
 button:hover {
-    background-color: #f1c26e;
-    color: #fff;
+    background-color: rgb(119, 204, 232);
+    color: rgb(119, 204, 232);
 }
 button:active {
-    background-color: #ffb84d;
+    background-color: rgb(119, 204, 232);
 }
 /* Camera Section */
 #camera-section {
@@ -76,8 +76,8 @@ canvas {
     display: none;
 }
 button#camera-access-button {
-    background-color: #ffcc66;
-    color: #6b4f3b;
+    background-color: rgb(119, 204, 232);
+    color: white;
     margin: 10px auto;
     display: block;
 }

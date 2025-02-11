@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.contrib import admin
 from django.urls import path
-from FLDPLDBM.views import signup_view, loginPage, logoutPage, landingPage, delete_embedding, FaceRecognitionAPI
+from FLDPLDBM.views import signup_view, loginPage, logoutPage, landingPage, delete_embedding, FaceRecognitionAPI, home_page
 from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
@@ -9,7 +9,8 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', signup_view, name='signup'),  # Signup page as root path
+    path("", home_page, name="home_page"),
+    path('signup/', signup_view, name='signup'),  # Signup page as root path
     path('login/', loginPage, name='login'),
     path('logout/', logoutPage, name='logout'),
     path('landing/', landingPage, name='landing'),

@@ -16,15 +16,16 @@
             box-sizing: border-box;
         }
         body {
-            background-image: url("{% static 'images/Impact.jpg' %}");
+            background-image: url("{% static 'images/rehman.jpg' %}");
             background-repeat: no-repeat;
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            font-family: 'Cambria', serif; /* Changed font to Cambria */
+            background-position: 10% 250%;
+            background-size: 600px 600px; 
+            background-color: rgb(2, 2, 24);
+            font-family: 'Cambria', serif;
             margin: 0;
-            padding: 20px;
-            background-color: #333; /* Dark background color */
+            padding: 0;
+            height: 100vh;
+            width: 100vw;
         }
         form {
             height: 520px;
@@ -33,7 +34,7 @@
             position: absolute;
             transform: translate(-50%,-50%);
             top: 50%;
-            left: 50%;
+            left: 75%;
             border-radius: 10px;
             backdrop-filter: blur(10px);
             border: 2px solid rgba(255, 255, 255, 0.1);
@@ -52,14 +53,17 @@
             font-weight: 500;
             line-height: 42px;
             text-align: center;
-            color: #f09819; /* Add some color contrast to the heading */
+            color: #rgb(119, 204, 232); /* Add some color contrast to the heading */
+        }
+        h3{
+            background:color:rgb(119, 204, 232)
         }
         label {
             display: block;
             margin-top: 30px;
             font-size: 16px;
             font-weight: 500;
-            color: #ffcc00; /* Yellow labels for better readability */
+            color: rgb(119, 204, 232); /* Yellow labels for better readability */
         }
         input {
             display: block;
@@ -79,7 +83,7 @@
         button {
             margin-top: 50px;
             width: 100%;
-            background-color: #ffcc00; /* Yellow button */
+            background-color: rgb(119, 204, 232); /* Yellow button */
             color: #080710;
             padding: 15px 0;
             font-size: 18px;
@@ -89,10 +93,10 @@
             transition: background-color 0.3s ease;
         }
         button:hover {
-            background-color: #f09819; /* Darker hover effect */
+            background-color: rgb(119, 204, 232); /* Darker hover effect */
         }
         a {
-            color: #ffcc00; /* Yellow link */
+            color: rgb(119, 204, 232); /* Yellow link */
             display: block;
             text-align: center;
             margin-top: 20px;
@@ -100,20 +104,32 @@
             text-decoration: none;
         }
         a:hover {
-            color: #f09819; /* Darker link on hover */
+            color: rgb(119, 204, 232); /* Darker link on hover */
         }
     </style>
 </head>
 <body>
-    <h2>Log In</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Log In</button>
-        Don't have an account? <a href="{% url 'signup' %}">Sign Up</a>
-    </form>
-    {% if form.errors %}
-        <p style="color: red;">{{ form.errors }}</p>
-    {% endif %}
+    <body>
+        <h2>Log In</h2>
+        <form method="post">
+            {% csrf_token %}
+
+            <h3>Log In</h3>
+            
+            <label>Username</label>
+            <input type="text" name="username" required>
+            
+            <label>Password</label>
+            <input type="password" name="password" required>
+            
+            <button type="submit">Log In</button>
+            
+            <p>Don't have an account? <a href="{% url 'signup' %}">Sign Up</a></p>
+    
+            {% if error_message %}
+                <p style="color: red">{{ error_message }}</p>
+            {% endif %}
+        </form>
+    </body>    
 </body>
 </html>
